@@ -46,6 +46,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FoundFilesForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FoundFilesForm.Designer.cs">
+      <DependentUpon>FoundFilesForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="TestXSLT.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -57,6 +63,9 @@
     <Compile Include="Utilities\FileSearchEngine.cs" />
     <Compile Include="Utilities\MessageBoxFactory.cs" />
     <Compile Include="Utilities\TransformXmlWithXslt.cs" />
+    <EmbeddedResource Include="FoundFilesForm.resx">
+      <DependentUpon>FoundFilesForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="TestXSLT.resx">
       <DependentUpon>TestXSLT.cs</DependentUpon>
     </EmbeddedResource>

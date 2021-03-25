@@ -51,7 +51,7 @@ namespace TransformationTesting
             // labSelectXSLT
             // 
             this.labSelectXSLT.AutoSize = true;
-            this.labSelectXSLT.Location = new System.Drawing.Point(26, 117);
+            this.labSelectXSLT.Location = new System.Drawing.Point(26, 69);
             this.labSelectXSLT.Name = "labSelectXSLT";
             this.labSelectXSLT.Size = new System.Drawing.Size(83, 13);
             this.labSelectXSLT.TabIndex = 1;
@@ -59,7 +59,7 @@ namespace TransformationTesting
             // 
             // btnSelectXML
             // 
-            this.btnSelectXML.Location = new System.Drawing.Point(184, 32);
+            this.btnSelectXML.Location = new System.Drawing.Point(136, 32);
             this.btnSelectXML.Name = "btnSelectXML";
             this.btnSelectXML.Size = new System.Drawing.Size(75, 23);
             this.btnSelectXML.TabIndex = 2;
@@ -69,7 +69,7 @@ namespace TransformationTesting
             // 
             // btnSelectXSLT
             // 
-            this.btnSelectXSLT.Location = new System.Drawing.Point(184, 112);
+            this.btnSelectXSLT.Location = new System.Drawing.Point(136, 64);
             this.btnSelectXSLT.Name = "btnSelectXSLT";
             this.btnSelectXSLT.Size = new System.Drawing.Size(75, 23);
             this.btnSelectXSLT.TabIndex = 3;
@@ -80,7 +80,7 @@ namespace TransformationTesting
             // labSelectedXML
             // 
             this.labSelectedXML.AutoSize = true;
-            this.labSelectedXML.Location = new System.Drawing.Point(283, 37);
+            this.labSelectedXML.Location = new System.Drawing.Point(217, 37);
             this.labSelectedXML.Name = "labSelectedXML";
             this.labSelectedXML.Size = new System.Drawing.Size(106, 13);
             this.labSelectedXML.TabIndex = 4;
@@ -89,7 +89,7 @@ namespace TransformationTesting
             // labSelectedXSLT
             // 
             this.labSelectedXSLT.AutoSize = true;
-            this.labSelectedXSLT.Location = new System.Drawing.Point(283, 117);
+            this.labSelectedXSLT.Location = new System.Drawing.Point(217, 69);
             this.labSelectedXSLT.Name = "labSelectedXSLT";
             this.labSelectedXSLT.Size = new System.Drawing.Size(111, 13);
             this.labSelectedXSLT.TabIndex = 5;
@@ -98,7 +98,7 @@ namespace TransformationTesting
             // btnTransform
             // 
             this.btnTransform.Enabled = false;
-            this.btnTransform.Location = new System.Drawing.Point(29, 157);
+            this.btnTransform.Location = new System.Drawing.Point(29, 94);
             this.btnTransform.Name = "btnTransform";
             this.btnTransform.Size = new System.Drawing.Size(75, 23);
             this.btnTransform.TabIndex = 6;
@@ -108,7 +108,7 @@ namespace TransformationTesting
             // 
             // btnClear
             // 
-            this.btnClear.Location = new System.Drawing.Point(29, 217);
+            this.btnClear.Location = new System.Drawing.Point(136, 94);
             this.btnClear.Name = "btnClear";
             this.btnClear.Size = new System.Drawing.Size(75, 23);
             this.btnClear.TabIndex = 7;
@@ -120,7 +120,7 @@ namespace TransformationTesting
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(872, 276);
+            this.ClientSize = new System.Drawing.Size(872, 170);
             this.Controls.Add(this.btnClear);
             this.Controls.Add(this.btnTransform);
             this.Controls.Add(this.labSelectedXSLT);
@@ -130,6 +130,7 @@ namespace TransformationTesting
             this.Controls.Add(this.labSelectXSLT);
             this.Controls.Add(this.labSelectXml);
             this.Name = "TestXSLT";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Test XSLT";
             this.ResumeLayout(false);
             this.PerformLayout();
