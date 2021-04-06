@@ -1,6 +1,8 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
@@ -8,29 +10,12 @@ using System.Xml.Xsl;
 
 namespace TransformationTesting.Utilities
 {
-    public class TransformXmlWithXslt
+    public class TransformEngine
     {
-        private readonly FileInfo xmlFile;
-        private readonly FileInfo xsltFile;
-        private readonly string rootFolder;
-        public IEnumerable<string> Errors { get; set; }
+        public ICollection<string> Errors { get; set; }
 
-        public TransformXmlWithXslt()
+        public TransformEngine()
         {
-            Errors = new List<string>();
-        }
-
-        /// <summary>
-        /// Create an instance of TransformXmlWithXslt class with <paramref name="xmlFile"/>, <paramref name="xsltFile"/> and <paramref name="rootFolder"/>
-        /// </summary>
-        /// <param name="xmlFile"></param>
-        /// <param name="xsltFile"></param>
-        /// <param name="rootFolder"></param>
-        public TransformXmlWithXslt(FileInfo xmlFile, FileInfo xsltFile, string rootFolder)
-        {
-            this.xmlFile = xmlFile;
-            this.xsltFile = xsltFile;
-            this.rootFolder = rootFolder;
             Errors = new List<string>();
         }
 
@@ -38,12 +23,13 @@ namespace TransformationTesting.Utilities
         /// Transform XML with XSLT
         /// </summary>
         /// <returns></returns>
-        public bool Transform()
+        public bool TransformXmlWithXslt(FileInfo xmlFile, string xsltFile, string rootFolder)
         {
             try
             {
+                ClearErrors();
                 var transformed = false;
-                var dataToTransform = GetDataToTransform();
+                var dataToTransform = GetDataToTransform(xmlFile);
 
                 if (dataToTransform.Length > 0)
                 {
@@ -54,7 +40,7 @@ namespace TransformationTesting.Utilities
                         dataToTransform = regex.Replace(dataToTransform, Guid.NewGuid().ToString(), 1);
                     }
 
-                    var transformedData = TransformString(dataToTransform);
+                    var transformedData = TransformString(dataToTransform, xsltFile);
 
                     if (transformedData.Length > 0)
                     {
@@ -64,7 +50,7 @@ namespace TransformationTesting.Utilities
                         var outFile = Path.Combine(rootFolder, "out", xmlFile.Name);
                         using (var writer = new XmlTextWriter(outFile, null))
                         {
-                            writer.Formatting = Formatting.Indented;
+                            writer.Formatting = System.Xml.Formatting.Indented;
                             document.Save(writer);
                         }
                         transformed = true;
@@ -92,26 +78,89 @@ namespace TransformationTesting.Utilities
             }
             catch (Exception ex)
             {
+                AddError(ex.Message);
                 throw;
             }
         }
 
-        private void AddError(string error)
+        public bool TransformXmlToJson(string xmlFile, string rootDirectory)
         {
-            (Errors as List<string>).Add(error);
+            try
+            {
+                ClearErrors();
+                var xmlText = File.ReadAllText(xmlFile);
+                var xmlDoc = new XmlDocument();
+                xmlDoc.LoadXml(xmlText);
+                var json = JsonConvert.SerializeXmlNode(xmlDoc, Newtonsoft.Json.Formatting.Indented);
+                var fileName = string.Concat(Path.GetFileNameWithoutExtension(xmlFile), ".json");
+                var path = Path.Combine(rootDirectory, "out", "json", fileName);
+                File.WriteAllText(path, json);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                AddError(ex.Message);
+                return false;
+            }
         }
 
-        private XslCompiledTransform LoadCompiledTransform()
+        public bool TransformJsonToXml(string jsonFile, string rootDirectory)
+        {
+            try
+            {
+                ClearErrors();
+                var json = File.ReadAllText(jsonFile);
+                var xmlDoc = JsonConvert.DeserializeXmlNode(json);
+                var fileName = string.Concat(Path.GetFileNameWithoutExtension(jsonFile), ".xml");
+                var path = Path.Combine(rootDirectory, "out", fileName);
+
+                using (var writer = new XmlTextWriter(path, null))
+                {
+                    writer.Formatting = System.Xml.Formatting.Indented;
+                    xmlDoc.Save(writer);
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                AddError(ex.Message);
+                return false;
+            }
+        }
+
+        public string GetErrorsAsString()
+        {
+            var message = default(string);
+            foreach (var error in Errors)
+            {
+                message += $"{error}\n";
+            }
+
+            return message;
+        }
+
+        private void AddError(string error)
+        {
+            Errors.Add(error);
+        }
+
+        private void ClearErrors()
+        {
+            Errors.Clear();
+        }
+
+        private XslCompiledTransform LoadCompiledTransform(string xsltFile)
         {
             var xslCompiledTransform = new XslCompiledTransform();
             var xsltSettings = new XsltSettings(true, true);
 
-            xslCompiledTransform.Load(xsltFile.FullName, xsltSettings, new XmlUrlResolver());
+            xslCompiledTransform.Load(xsltFile, xsltSettings, new XmlUrlResolver());
 
             return xslCompiledTransform;
         }
 
-        private string GetDataToTransform()
+        private string GetDataToTransform(FileInfo xmlFile)
         {
             var dataToTransform = string.Empty;
             using (var fileStream = File.OpenRead(xmlFile.FullName))
@@ -125,9 +174,9 @@ namespace TransformationTesting.Utilities
             return dataToTransform;
         }
 
-        private string TransformString(string data)
+        private string TransformString(string data, string xsltFile)
         {
-            var xslTransform = LoadCompiledTransform();
+            var xslTransform = LoadCompiledTransform(xsltFile);
             var pXsltArgumentList = new XsltArgumentList();
             var stringBuilder = new StringBuilder();
             pXsltArgumentList.Clear();
@@ -149,5 +198,7 @@ namespace TransformationTesting.Utilities
 
             return stringBuilder.ToString();
         }
+
+        
     }
 }

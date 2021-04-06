@@ -8,17 +8,20 @@ namespace TransformationTesting
 {
     public partial class TestXSLT : Form
     {
-        private readonly string _rootFolder;
-        private readonly string _noFileChosen;
+        private readonly string rootFolder;
+        private readonly string noFileChosen;
+        private readonly TransformEngine transformEngine;
+        private readonly MessageBoxFactory messageBoxFactory;
         public FileInfo XmlFile { get; set; }
         public FileInfo XsltFile { get; set; }
-        private readonly MessageBoxFactory _messageBoxFactory;
+        public FileInfo JsonFile { get; set; }
         public TestXSLT()
         {
             InitializeComponent();
-            _rootFolder = Directory.GetCurrentDirectory();
-            _noFileChosen = "No {0} file was chosen";
-            _messageBoxFactory = new MessageBoxFactory();
+            rootFolder = Directory.GetCurrentDirectory();
+            noFileChosen = "No {0} file was chosen";
+            messageBoxFactory = new MessageBoxFactory();
+            transformEngine = new TransformEngine();
             CreateFolders();
             EnableSearch("*.xml", "*.xslt");
         }
@@ -27,7 +30,7 @@ namespace TransformationTesting
         {
             using (var ofd = new OpenFileDialog())
             {
-                ofd.InitialDirectory = _rootFolder;
+                ofd.InitialDirectory = rootFolder;
                 ofd.Filter = "XML files|*.xml";
                 if (ofd.ShowDialog() == DialogResult.OK)
                 {
@@ -45,7 +48,7 @@ namespace TransformationTesting
         {
             using (var ofd = new OpenFileDialog())
             {
-                ofd.InitialDirectory = _rootFolder;
+                ofd.InitialDirectory = rootFolder;
                 ofd.Filter = "XSLT files|*.xslt";
                 if (ofd.ShowDialog() == DialogResult.OK)
                 {
@@ -54,6 +57,24 @@ namespace TransformationTesting
                         XsltFile = new FileInfo(ofd.FileName);
                         labSelectedXSLT.Text = ofd.FileName;
                         CheckTransformButton();
+                    }
+                }
+            }
+        }
+
+        private void btnSelectJSON_Click(object sender, EventArgs e)
+        {
+            using (var ofd = new OpenFileDialog())
+            {
+                ofd.InitialDirectory = rootFolder;
+                ofd.Filter = "JSON files|*.json";
+                if (ofd.ShowDialog() == DialogResult.OK)
+                {
+                    if (File.Exists(ofd.FileName))
+                    {
+                        JsonFile = new FileInfo(ofd.FileName);
+                        labSelectedJSON.Text = ofd.FileName;
+                        btnJSONtoXML.Enabled = CheckIfJsonReady();
                     }
                 }
             }
@@ -69,15 +90,13 @@ namespace TransformationTesting
             try
             {
                 SetTransformAndClearButtons(false);
-                var transformXml = new TransformXmlWithXslt(XmlFile, XsltFile, _rootFolder);
-
-                if (transformXml.Transform())
+                if (transformEngine.TransformXmlWithXslt(XmlFile, XsltFile.FullName, rootFolder))
                 {
-                    if (_messageBoxFactory.ShowInfoBox("XML was transformed successfully", "Success") == DialogResult.OK)
+                    if (messageBoxFactory.ShowInfoBox("XML was transformed successfully", "Success") == DialogResult.OK)
                     {
-                        if (_messageBoxFactory.ShowQuestionBox("Open transformed file?", "Info") == DialogResult.Yes)
+                        if (messageBoxFactory.ShowQuestionBox("Open transformed file?", "Info") == DialogResult.Yes)
                         {
-                            var outFile = CombinePaths(_rootFolder, "out", XmlFile.Name);
+                            var outFile = CombinePaths(rootFolder, "out", XmlFile.Name);
                             Process.Start(outFile);
                         }
                     }
@@ -85,28 +104,22 @@ namespace TransformationTesting
                 }
                 else
                 {
-                    if (_messageBoxFactory.ShowWarningBox("XML was not transformed", "Transformation error") == DialogResult.OK)
+                    if (messageBoxFactory.ShowWarningBox("XML was not transformed", "Transformation error") == DialogResult.OK)
                     {
-                        if (_messageBoxFactory.ShowQuestionBox("Show possible reasons?", "Show reasons?") == DialogResult.Yes)
+                        if (messageBoxFactory.ShowQuestionBox("Show possible reasons?", "Show reasons?") == DialogResult.Yes)
                         {
-                            var message = default(string);
-                            foreach (var error in transformXml.Errors)
-                            {
-                                message += $"{error}\n";
-                            }
-
-                            _messageBoxFactory.ShowInfoBox(message, "Reasons");
+                            ShowReasons();
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                if (_messageBoxFactory.ShowErrorBox(ex.Message, "Error") == DialogResult.OK)
+                if (messageBoxFactory.ShowErrorBox(ex.Message, "Error") == DialogResult.OK)
                 {
-                    if (_messageBoxFactory.ShowQuestionBox("Show stack trace?", "Info") == DialogResult.Yes)
+                    if (messageBoxFactory.ShowQuestionBox("Show stack trace?", "Info") == DialogResult.Yes)
                     {
-                        _messageBoxFactory.ShowErrorBox(ex.StackTrace, "Stack trace");
+                        messageBoxFactory.ShowErrorBox(ex.StackTrace, "Stack trace");
                     }
                 }
             }
@@ -116,16 +129,111 @@ namespace TransformationTesting
             }
         }
 
+        private void btnTransformToJSON_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (transformEngine.TransformXmlToJson(XmlFile.FullName, rootFolder))
+                {
+                    if (messageBoxFactory.ShowInfoBox("XML was transformed successfully", "Success") == DialogResult.OK)
+                    {
+                        if (messageBoxFactory.ShowQuestionBox("Open transformed file?", "Info") == DialogResult.Yes)
+                        {
+                            var fileName = string.Concat(Path.GetFileNameWithoutExtension(XmlFile.FullName), ".json");
+                            var outFile = CombinePaths(rootFolder, "out", "json", fileName);
+                            Process.Start(outFile);
+                        }
+                    }
+                }
+                else
+                {
+                    if (messageBoxFactory.ShowWarningBox("XML was not transformed", "Transformation error") == DialogResult.OK)
+                    {
+                        if (messageBoxFactory.ShowQuestionBox("Show possible reasons?", "Show reasons?") == DialogResult.Yes)
+                        {
+                            ShowReasons();
+                        }
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                if (messageBoxFactory.ShowErrorBox(ex.Message, "XML transformation error") == DialogResult.OK)
+                {
+                    if (messageBoxFactory.ShowQuestionBox("Show stack trace?", "Info") == DialogResult.Yes)
+                    {
+                        messageBoxFactory.ShowErrorBox(ex.StackTrace, "Stack trace");
+                    }
+                }
+            }
+            finally
+            {
+                Clear();
+            }
+        }
+        
+        private void btnJSONtoXML_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (transformEngine.TransformJsonToXml(JsonFile.FullName, rootFolder))
+                {
+                    if (messageBoxFactory.ShowInfoBox("JSON was transformed successfully", "Success") == DialogResult.OK)
+                    {
+                        if (messageBoxFactory.ShowQuestionBox("Open transformed file?", "Info") == DialogResult.Yes)
+                        {
+                            var fileName = string.Concat(Path.GetFileNameWithoutExtension(JsonFile.FullName), ".xml");
+                            var outFile = CombinePaths(rootFolder, "out", fileName);
+                            Process.Start(outFile);
+                        }
+                    }
+                }
+                else
+                {
+                    if (messageBoxFactory.ShowWarningBox("XML was not transformed", "Transformation error") == DialogResult.OK)
+                    {
+                        if (messageBoxFactory.ShowQuestionBox("Show possible reasons?", "Show reasons?") == DialogResult.Yes)
+                        {
+                            ShowReasons();
+                        }
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                if (messageBoxFactory.ShowErrorBox(ex.Message, "XML transformation error") == DialogResult.OK)
+                {
+                    if (messageBoxFactory.ShowQuestionBox("Show stack trace?", "Info") == DialogResult.Yes)
+                    {
+                        messageBoxFactory.ShowErrorBox(ex.StackTrace, "Stack trace");
+                    }
+                }
+            }
+            finally
+            {
+                Clear();
+            }
+            
+        }
+
         private void CreateFolders()
         {
             CreateFolderInRootDirectory("in");
             CreateFolderInRootDirectory("out");
             CreateFolderInRootDirectory("xslt");
+            CreateFolderInRootDirectory("json");
+        }
+
+        private void ShowReasons()
+        {
+            messageBoxFactory.ShowInfoBox(transformEngine.GetErrorsAsString(), "Reasons");
         }
 
         private void CreateFolderInRootDirectory(string folderName)
         {
-            var path = CombinePaths(_rootFolder, folderName);
+            var path = CombinePaths(rootFolder, folderName);
             if (!Directory.Exists(path))
             {
                 Directory.CreateDirectory(path);
@@ -174,26 +282,34 @@ namespace TransformationTesting
             {
                 message = "No files were found";
             }
-            _messageBoxFactory.ShowInfoBox(message, "Files");
+            messageBoxFactory.ShowInfoBox(message, "Files");
         }
 
         private void Clear()
         {
             ClearXml();
             ClearXslt();
+            ClearJson();
             btnTransform.Enabled = false;
         }
 
         private void ClearXml()
         {
             XmlFile = null;
-            labSelectedXML.Text = string.Format(_noFileChosen, "XML");
+            labSelectedXML.Text = string.Format(noFileChosen, "XML");
         }
 
         private void ClearXslt()
         {
             XsltFile = null;
-            labSelectedXSLT.Text = string.Format(_noFileChosen, "XSLT");
+            labSelectedXSLT.Text = string.Format(noFileChosen, "XSLT");
+        }
+
+        private void ClearJson()
+        {
+            JsonFile = null;
+            labSelectedJSON.Text = string.Format(noFileChosen, "JSON");
+            btnJSONtoXML.Enabled = false;
         }
 
         private void SetTransformAndClearButtons(bool state)
@@ -205,10 +321,10 @@ namespace TransformationTesting
         private void EnableSearch(params string[] patterns)
         {
             var message = $"Would you like the program to search for {GetPatternsAsString(patterns)} files itself?";
-            if (_messageBoxFactory.ShowQuestionBox(message, "Search?") == DialogResult.Yes)
+            if (messageBoxFactory.ShowQuestionBox(message, "Search?") == DialogResult.Yes)
             {
                 var foundForm = new FoundFilesForm(this);
-                var found = foundForm.SearchFiles(_rootFolder, patterns);
+                var found = foundForm.SearchFiles(rootFolder, patterns);
                 if (found)
                 {
                     foundForm.ShowDialog();
@@ -231,6 +347,11 @@ namespace TransformationTesting
         private bool CheckIfReady()
         {
             return IsFileInfoReady(XmlFile) && IsFileInfoReady(XsltFile);
+        }
+
+        private bool CheckIfJsonReady()
+        {
+            return IsFileInfoReady(JsonFile);
         }
 
         private bool IsFileInfoReady(FileInfo fileInfo)
