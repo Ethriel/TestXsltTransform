@@ -44,7 +44,7 @@ namespace TransformationTesting
         {
             if (lbXml.SelectedItem is FileInfo)
             {
-                OwnerForm.XmlFile = lbXml.SelectedItem as FileInfo;
+                OwnerForm.Files.XmlFile = lbXml.SelectedItem as FileInfo;
             }
         }
 
@@ -52,7 +52,7 @@ namespace TransformationTesting
         {
             if (lbXslt.SelectedItem is FileInfo)
             {
-                OwnerForm.XsltFile = lbXslt.SelectedItem as FileInfo;
+                OwnerForm.Files.XsltFile = lbXslt.SelectedItem as FileInfo;
             }
         }
 

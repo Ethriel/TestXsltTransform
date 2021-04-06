@@ -64,6 +64,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utilities\FileSearchEngine.cs" />
+    <Compile Include="Utilities\FilesToTransform.cs" />
     <Compile Include="Utilities\MessageBoxFactory.cs" />
     <Compile Include="Utilities\TransformEngine.cs" />
     <EmbeddedResource Include="FoundFilesForm.resx">

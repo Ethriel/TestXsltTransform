@@ -35,7 +35,7 @@ namespace TransformationTesting
             this.btnSelectXSLT = new System.Windows.Forms.Button();
             this.labSelectedXML = new System.Windows.Forms.Label();
             this.labSelectedXSLT = new System.Windows.Forms.Label();
-            this.btnTransform = new System.Windows.Forms.Button();
+            this.btnXmlWithXslt = new System.Windows.Forms.Button();
             this.btnClear = new System.Windows.Forms.Button();
             this.btnXmlToJSON = new System.Windows.Forms.Button();
             this.labSelectedJSON = new System.Windows.Forms.Label();
@@ -102,14 +102,14 @@ namespace TransformationTesting
             // 
             // btnTransform
             // 
-            this.btnTransform.Enabled = false;
-            this.btnTransform.Location = new System.Drawing.Point(29, 122);
-            this.btnTransform.Name = "btnTransform";
-            this.btnTransform.Size = new System.Drawing.Size(110, 35);
-            this.btnTransform.TabIndex = 6;
-            this.btnTransform.Text = "XML with XSLT";
-            this.btnTransform.UseVisualStyleBackColor = true;
-            this.btnTransform.Click += new System.EventHandler(this.btnTransform_Click);
+            this.btnXmlWithXslt.Enabled = false;
+            this.btnXmlWithXslt.Location = new System.Drawing.Point(29, 122);
+            this.btnXmlWithXslt.Name = "btnTransform";
+            this.btnXmlWithXslt.Size = new System.Drawing.Size(110, 35);
+            this.btnXmlWithXslt.TabIndex = 6;
+            this.btnXmlWithXslt.Text = "XML with XSLT";
+            this.btnXmlWithXslt.UseVisualStyleBackColor = true;
+            this.btnXmlWithXslt.Click += new System.EventHandler(this.btnTransform_Click);
             // 
             // btnClear
             // 
@@ -182,7 +182,7 @@ namespace TransformationTesting
             this.Controls.Add(this.labSelectJSON);
             this.Controls.Add(this.btnXmlToJSON);
             this.Controls.Add(this.btnClear);
-            this.Controls.Add(this.btnTransform);
+            this.Controls.Add(this.btnXmlWithXslt);
             this.Controls.Add(this.labSelectedXSLT);
             this.Controls.Add(this.labSelectedXML);
             this.Controls.Add(this.btnSelectXSLT);
@@ -205,7 +205,7 @@ namespace TransformationTesting
         private System.Windows.Forms.Button btnSelectXSLT;
         private System.Windows.Forms.Label labSelectedXML;
         private System.Windows.Forms.Label labSelectedXSLT;
-        private System.Windows.Forms.Button btnTransform;
+        private System.Windows.Forms.Button btnXmlWithXslt;
         private System.Windows.Forms.Button btnClear;
         private System.Windows.Forms.Button btnXmlToJSON;
         private System.Windows.Forms.Label labSelectedJSON;

@@ -8,57 +8,54 @@ namespace TransformationTesting
 {
     public partial class TestXSLT : Form
     {
-        private readonly string rootFolder;
-        private readonly string noFileChosen;
         private readonly TransformEngine transformEngine;
         private readonly MessageBoxFactory messageBoxFactory;
-        private FileInfo xmlFile;
-        private FileInfo xsltFile;
-        private FileInfo jsonFile;
-        public FileInfo XmlFile { get => xmlFile; set => xmlFile = value; }
-        public FileInfo XsltFile { get => xsltFile; set => xsltFile = value; }
-        public FileInfo JsonFile { get => jsonFile; set => jsonFile = value; }
+        private readonly FilesToTransform files;
+        public FilesToTransform Files { get => files; }
         public TestXSLT()
         {
             InitializeComponent();
-            rootFolder = Directory.GetCurrentDirectory();
-            noFileChosen = "No {0} file was chosen";
             messageBoxFactory = new MessageBoxFactory();
             transformEngine = new TransformEngine();
+            files = new FilesToTransform();
             CreateFolders();
             EnableSearch("*.xml", "*.xslt");
         }
 
         private void btnSelectXML_Click(object sender, EventArgs e)
         {
-            SelectFile("XML files|*.xml", ref xmlFile, ref labSelectedXML);
+            files.XmlFile = SelectFile("XML files|*.xml", labSelectedXML);
+            CheckTransformButtons();
         }
 
         private void btnSelectXSLT_Click(object sender, EventArgs e)
         {
-            SelectFile("XSLT files|*.xslt", ref xsltFile, ref labSelectedXSLT);
+            files.XsltFile = SelectFile("XSLT files|*.xslt", labSelectedXSLT);
+            CheckTransformButtons();
         }
 
         private void btnSelectJSON_Click(object sender, EventArgs e)
         {
-            SelectFile("JSON files|*.json", ref jsonFile, ref labSelectedJSON);
+            files.JsonFile = SelectFile("JSON files|*.json", labSelectedJSON);
+            CheckTransformButtons();
         }
 
-        private void SelectFile(string filter, ref FileInfo file, ref Label label)
+        private FileInfo SelectFile(string filter, Label label)
         {
             using (var ofd = new OpenFileDialog())
             {
-                ofd.InitialDirectory = rootFolder;
+                ofd.InitialDirectory = files.RootDirectory;
                 ofd.Filter = filter;
                 if (ofd.ShowDialog() == DialogResult.OK)
                 {
                     if (File.Exists(ofd.FileName))
                     {
-                        file = new FileInfo(ofd.FileName);
                         label.Text = ofd.FileName;
-                        CheckTransformButtons();
+                        return new FileInfo(ofd.FileName);
                     }
                 }
+
+                return null;
             }
         }
 
@@ -121,25 +118,22 @@ namespace TransformationTesting
         private void Transform(TransformType transformType)
         {
             var transformResult = false;
-            var fileWitoutExtension = default(string);
             var fileName = default(string);
 
             switch (transformType)
             {
 
                 case TransformType.XmlWithXslt:
-                    transformResult = transformEngine.TransformXmlWithXslt(XmlFile, XsltFile.FullName, rootFolder);
-                    fileName = CombinePaths(rootFolder, "out", XmlFile.Name);
+                    transformResult = transformEngine.TransformXmlWithXslt(files.XmlFile, files.XsltFile.FullName, files.RootDirectory);
+                    fileName = files.FileNameOutXml;
                     break;
                 case TransformType.JsonToXml:
-                    transformResult = transformEngine.TransformJsonToXml(JsonFile.FullName, rootFolder);
-                    fileWitoutExtension = Path.GetFileNameWithoutExtension(JsonFile.FullName);
-                    fileName = CombinePaths(rootFolder, "out", string.Concat(fileWitoutExtension, ".xml"));
+                    transformResult = transformEngine.TransformJsonToXml(files.JsonFile.FullName, files.RootDirectory);
+                    fileName = files.FileNameOutXmlFromJson;
                     break;
                 case TransformType.XmlToJson:
-                    transformResult = transformEngine.TransformXmlToJson(XmlFile.FullName, rootFolder);
-                    fileWitoutExtension = Path.GetFileNameWithoutExtension(XmlFile.FullName);
-                    fileName = CombinePaths(rootFolder, "out", string.Concat(fileWitoutExtension, ".json"));
+                    transformResult = transformEngine.TransformXmlToJson(files.XmlFile.FullName, files.RootDirectory);
+                    fileName = files.FileNameOutJson;
                     break;
                 default:
                     break;
@@ -201,36 +195,40 @@ namespace TransformationTesting
 
         private void CreateFolderInRootDirectory(string folderName)
         {
-            var path = CombinePaths(rootFolder, folderName);
+            var path = Path.Combine(files.RootDirectory, folderName);
             if (!Directory.Exists(path))
             {
                 Directory.CreateDirectory(path);
             }
         }
 
-        private string CombinePaths(params string[] paths)
-        {
-            return Path.Combine(paths);
-        }
-
         private void SetLabsAndfiles()
         {
-            if (XmlFile == null)
+            if (files.XmlFile == null)
             {
                 ClearXml();
             }
             else
             {
-                labSelectedXML.Text = XmlFile.FullName;
+                labSelectedXML.Text = files.XmlFile.FullName;
             }
 
-            if (XsltFile == null)
+            if (files.XsltFile == null)
             {
                 ClearXslt();
             }
             else
             {
-                labSelectedXSLT.Text = XsltFile.FullName;
+                labSelectedXSLT.Text = files.XsltFile.FullName;
+            }
+
+            if (files.JsonFile == null)
+            {
+                ClearJson();
+            }
+            else
+            {
+                labSelectJSON.Text = files.JsonFile.FullName;
             }
             FileFoundBox();
         }
@@ -238,12 +236,12 @@ namespace TransformationTesting
         private void FileFoundBox()
         {
             var message = "Files found: ";
-            if (XmlFile != null)
+            if (files.XmlFile != null)
             {
-                message = string.Concat(message, XmlFile.Name, ", ");
-                if (XsltFile != null)
+                message = string.Concat(message, files.XmlFile.Name, ", ");
+                if (files.XsltFile != null)
                 {
-                    message = string.Concat(message, XsltFile.Name);
+                    message = string.Concat(message, files.XsltFile.Name);
                 }
             }
             else
@@ -258,30 +256,27 @@ namespace TransformationTesting
             ClearXml();
             ClearXslt();
             ClearJson();
-            btnTransform.Enabled = false;
+            btnXmlWithXslt.Enabled = false;
         }
 
         private void ClearXml()
         {
-            XmlFile = null;
-            labSelectedXML.Text = string.Format(noFileChosen, "XML");
+            labSelectedXML.Text = files.ClearXml();
         }
 
         private void ClearXslt()
         {
-            XsltFile = null;
-            labSelectedXSLT.Text = string.Format(noFileChosen, "XSLT");
+            labSelectedXSLT.Text = files.ClearXslt();
         }
 
         private void ClearJson()
         {
-            JsonFile = null;
-            labSelectedJSON.Text = string.Format(noFileChosen, "JSON");
+            labSelectedJSON.Text = files.ClearJson();
         }
 
         private void SetTransformAndClearButtons(bool state)
         {
-            btnTransform.Enabled = state;
+            btnXmlWithXslt.Enabled = state;
             btnClear.Enabled = state;
             btnJSONtoXML.Enabled = state;
             btnXmlToJSON.Enabled = state;
@@ -293,7 +288,7 @@ namespace TransformationTesting
             if (messageBoxFactory.ShowQuestionBox(message, "Search?") == DialogResult.Yes)
             {
                 var foundForm = new FoundFilesForm(this);
-                var found = foundForm.SearchFiles(rootFolder, patterns);
+                var found = foundForm.SearchFiles(files.RootDirectory, patterns);
                 if (found)
                 {
                     foundForm.ShowDialog();
@@ -310,34 +305,9 @@ namespace TransformationTesting
 
         private void CheckTransformButtons()
         {
-            btnTransform.Enabled = CheckIfReady();
-            btnJSONtoXML.Enabled = CheckIfJsonReady();
-            btnXmlToJSON.Enabled = IsFileInfoReady(XmlFile);
-        }
-
-        private bool CheckIfReady()
-        {
-            return IsFileInfoReady(XmlFile) && IsFileInfoReady(XsltFile);
-        }
-
-        private bool CheckIfJsonReady()
-        {
-            return IsFileInfoReady(JsonFile);
-        }
-
-        private bool IsFileInfoReady(FileInfo fileInfo)
-        {
-            if (fileInfo == null)
-            {
-                return false;
-            }
-
-            return !IsStringNullOrEmpty(fileInfo.FullName);
-        }
-
-        private bool IsStringNullOrEmpty(string value)
-        {
-            return string.IsNullOrWhiteSpace(value);
+            btnXmlWithXslt.Enabled = files.IsXmlReadyForXslt();
+            btnJSONtoXML.Enabled = files.IsJsonReadyForXml();
+            btnXmlToJSON.Enabled = files.IsXmlReadyForJson();
         }
     }
 }
