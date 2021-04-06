@@ -10,6 +10,12 @@ using System.Xml.Xsl;
 
 namespace TransformationTesting.Utilities
 {
+    public enum TransformType
+    {
+        XmlWithXslt,
+        JsonToXml,
+        XmlToJson
+    }
     public class TransformEngine
     {
         public ICollection<string> Errors { get; set; }
@@ -93,7 +99,7 @@ namespace TransformationTesting.Utilities
                 xmlDoc.LoadXml(xmlText);
                 var json = JsonConvert.SerializeXmlNode(xmlDoc, Newtonsoft.Json.Formatting.Indented);
                 var fileName = string.Concat(Path.GetFileNameWithoutExtension(xmlFile), ".json");
-                var path = Path.Combine(rootDirectory, "out", "json", fileName);
+                var path = Path.Combine(rootDirectory, "out", fileName);
                 File.WriteAllText(path, json);
                 return true;
             }

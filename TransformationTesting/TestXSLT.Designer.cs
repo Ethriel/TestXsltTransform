@@ -37,7 +37,7 @@ namespace TransformationTesting
             this.labSelectedXSLT = new System.Windows.Forms.Label();
             this.btnTransform = new System.Windows.Forms.Button();
             this.btnClear = new System.Windows.Forms.Button();
-            this.btnTransformToJSON = new System.Windows.Forms.Button();
+            this.btnXmlToJSON = new System.Windows.Forms.Button();
             this.labSelectedJSON = new System.Windows.Forms.Label();
             this.btnSelectJSON = new System.Windows.Forms.Button();
             this.labSelectJSON = new System.Windows.Forms.Label();
@@ -121,15 +121,16 @@ namespace TransformationTesting
             this.btnClear.UseVisualStyleBackColor = true;
             this.btnClear.Click += new System.EventHandler(this.btnClear_Click);
             // 
-            // btnTransformToJSON
+            // btnXmlToJSON
             // 
-            this.btnTransformToJSON.Location = new System.Drawing.Point(145, 122);
-            this.btnTransformToJSON.Name = "btnTransformToJSON";
-            this.btnTransformToJSON.Size = new System.Drawing.Size(110, 35);
-            this.btnTransformToJSON.TabIndex = 8;
-            this.btnTransformToJSON.Text = "XML => JSON";
-            this.btnTransformToJSON.UseVisualStyleBackColor = true;
-            this.btnTransformToJSON.Click += new System.EventHandler(this.btnTransformToJSON_Click);
+            this.btnXmlToJSON.Enabled = false;
+            this.btnXmlToJSON.Location = new System.Drawing.Point(145, 122);
+            this.btnXmlToJSON.Name = "btnXmlToJSON";
+            this.btnXmlToJSON.Size = new System.Drawing.Size(110, 35);
+            this.btnXmlToJSON.TabIndex = 8;
+            this.btnXmlToJSON.Text = "XML => JSON";
+            this.btnXmlToJSON.UseVisualStyleBackColor = true;
+            this.btnXmlToJSON.Click += new System.EventHandler(this.btnXmlToJSON_Click);
             // 
             // labSelectedJSON
             // 
@@ -179,7 +180,7 @@ namespace TransformationTesting
             this.Controls.Add(this.labSelectedJSON);
             this.Controls.Add(this.btnSelectJSON);
             this.Controls.Add(this.labSelectJSON);
-            this.Controls.Add(this.btnTransformToJSON);
+            this.Controls.Add(this.btnXmlToJSON);
             this.Controls.Add(this.btnClear);
             this.Controls.Add(this.btnTransform);
             this.Controls.Add(this.labSelectedXSLT);
@@ -206,7 +207,7 @@ namespace TransformationTesting
         private System.Windows.Forms.Label labSelectedXSLT;
         private System.Windows.Forms.Button btnTransform;
         private System.Windows.Forms.Button btnClear;
-        private System.Windows.Forms.Button btnTransformToJSON;
+        private System.Windows.Forms.Button btnXmlToJSON;
         private System.Windows.Forms.Label labSelectedJSON;
         private System.Windows.Forms.Button btnSelectJSON;
         private System.Windows.Forms.Label labSelectJSON;

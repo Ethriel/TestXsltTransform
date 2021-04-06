@@ -12,9 +12,12 @@ namespace TransformationTesting
         private readonly string noFileChosen;
         private readonly TransformEngine transformEngine;
         private readonly MessageBoxFactory messageBoxFactory;
-        public FileInfo XmlFile { get; set; }
-        public FileInfo XsltFile { get; set; }
-        public FileInfo JsonFile { get; set; }
+        private FileInfo xmlFile;
+        private FileInfo xsltFile;
+        private FileInfo jsonFile;
+        public FileInfo XmlFile { get => xmlFile; set => xmlFile = value; }
+        public FileInfo XsltFile { get => xsltFile; set => xsltFile = value; }
+        public FileInfo JsonFile { get => jsonFile; set => jsonFile = value; }
         public TestXSLT()
         {
             InitializeComponent();
@@ -28,53 +31,32 @@ namespace TransformationTesting
 
         private void btnSelectXML_Click(object sender, EventArgs e)
         {
-            using (var ofd = new OpenFileDialog())
-            {
-                ofd.InitialDirectory = rootFolder;
-                ofd.Filter = "XML files|*.xml";
-                if (ofd.ShowDialog() == DialogResult.OK)
-                {
-                    if (File.Exists(ofd.FileName))
-                    {
-                        XmlFile = new FileInfo(ofd.FileName);
-                        labSelectedXML.Text = ofd.FileName;
-                        CheckTransformButton();
-                    }
-                }
-            }
+            SelectFile("XML files|*.xml", ref xmlFile, ref labSelectedXML);
         }
 
         private void btnSelectXSLT_Click(object sender, EventArgs e)
         {
-            using (var ofd = new OpenFileDialog())
-            {
-                ofd.InitialDirectory = rootFolder;
-                ofd.Filter = "XSLT files|*.xslt";
-                if (ofd.ShowDialog() == DialogResult.OK)
-                {
-                    if (File.Exists(ofd.FileName))
-                    {
-                        XsltFile = new FileInfo(ofd.FileName);
-                        labSelectedXSLT.Text = ofd.FileName;
-                        CheckTransformButton();
-                    }
-                }
-            }
+            SelectFile("XSLT files|*.xslt", ref xsltFile, ref labSelectedXSLT);
         }
 
         private void btnSelectJSON_Click(object sender, EventArgs e)
         {
+            SelectFile("JSON files|*.json", ref jsonFile, ref labSelectedJSON);
+        }
+
+        private void SelectFile(string filter, ref FileInfo file, ref Label label)
+        {
             using (var ofd = new OpenFileDialog())
             {
                 ofd.InitialDirectory = rootFolder;
-                ofd.Filter = "JSON files|*.json";
+                ofd.Filter = filter;
                 if (ofd.ShowDialog() == DialogResult.OK)
                 {
                     if (File.Exists(ofd.FileName))
                     {
-                        JsonFile = new FileInfo(ofd.FileName);
-                        labSelectedJSON.Text = ofd.FileName;
-                        btnJSONtoXML.Enabled = CheckIfJsonReady();
+                        file = new FileInfo(ofd.FileName);
+                        label.Text = ofd.FileName;
+                        CheckTransformButtons();
                     }
                 }
             }
@@ -89,133 +71,113 @@ namespace TransformationTesting
         {
             try
             {
-                SetTransformAndClearButtons(false);
-                if (transformEngine.TransformXmlWithXslt(XmlFile, XsltFile.FullName, rootFolder))
-                {
-                    if (messageBoxFactory.ShowInfoBox("XML was transformed successfully", "Success") == DialogResult.OK)
-                    {
-                        if (messageBoxFactory.ShowQuestionBox("Open transformed file?", "Info") == DialogResult.Yes)
-                        {
-                            var outFile = CombinePaths(rootFolder, "out", XmlFile.Name);
-                            Process.Start(outFile);
-                        }
-                    }
-                    SetTransformAndClearButtons(true);
-                }
-                else
-                {
-                    if (messageBoxFactory.ShowWarningBox("XML was not transformed", "Transformation error") == DialogResult.OK)
-                    {
-                        if (messageBoxFactory.ShowQuestionBox("Show possible reasons?", "Show reasons?") == DialogResult.Yes)
-                        {
-                            ShowReasons();
-                        }
-                    }
-                }
+                Transform(TransformType.XmlWithXslt);
             }
             catch (Exception ex)
             {
-                if (messageBoxFactory.ShowErrorBox(ex.Message, "Error") == DialogResult.OK)
-                {
-                    if (messageBoxFactory.ShowQuestionBox("Show stack trace?", "Info") == DialogResult.Yes)
-                    {
-                        messageBoxFactory.ShowErrorBox(ex.StackTrace, "Stack trace");
-                    }
-                }
+                ShowException(ex);
             }
             finally
             {
                 Clear();
+                CheckTransformButtons();
             }
         }
 
-        private void btnTransformToJSON_Click(object sender, EventArgs e)
+        private void btnXmlToJSON_Click(object sender, EventArgs e)
         {
             try
             {
-                if (transformEngine.TransformXmlToJson(XmlFile.FullName, rootFolder))
-                {
-                    if (messageBoxFactory.ShowInfoBox("XML was transformed successfully", "Success") == DialogResult.OK)
-                    {
-                        if (messageBoxFactory.ShowQuestionBox("Open transformed file?", "Info") == DialogResult.Yes)
-                        {
-                            var fileName = string.Concat(Path.GetFileNameWithoutExtension(XmlFile.FullName), ".json");
-                            var outFile = CombinePaths(rootFolder, "out", "json", fileName);
-                            Process.Start(outFile);
-                        }
-                    }
-                }
-                else
-                {
-                    if (messageBoxFactory.ShowWarningBox("XML was not transformed", "Transformation error") == DialogResult.OK)
-                    {
-                        if (messageBoxFactory.ShowQuestionBox("Show possible reasons?", "Show reasons?") == DialogResult.Yes)
-                        {
-                            ShowReasons();
-                        }
-                    }
-                }
-
+                Transform(TransformType.XmlToJson);
             }
             catch (Exception ex)
             {
-                if (messageBoxFactory.ShowErrorBox(ex.Message, "XML transformation error") == DialogResult.OK)
-                {
-                    if (messageBoxFactory.ShowQuestionBox("Show stack trace?", "Info") == DialogResult.Yes)
-                    {
-                        messageBoxFactory.ShowErrorBox(ex.StackTrace, "Stack trace");
-                    }
-                }
+                ShowException(ex);
             }
             finally
             {
                 Clear();
+                CheckTransformButtons();
             }
         }
-        
+
         private void btnJSONtoXML_Click(object sender, EventArgs e)
         {
             try
             {
-                if (transformEngine.TransformJsonToXml(JsonFile.FullName, rootFolder))
-                {
-                    if (messageBoxFactory.ShowInfoBox("JSON was transformed successfully", "Success") == DialogResult.OK)
-                    {
-                        if (messageBoxFactory.ShowQuestionBox("Open transformed file?", "Info") == DialogResult.Yes)
-                        {
-                            var fileName = string.Concat(Path.GetFileNameWithoutExtension(JsonFile.FullName), ".xml");
-                            var outFile = CombinePaths(rootFolder, "out", fileName);
-                            Process.Start(outFile);
-                        }
-                    }
-                }
-                else
-                {
-                    if (messageBoxFactory.ShowWarningBox("XML was not transformed", "Transformation error") == DialogResult.OK)
-                    {
-                        if (messageBoxFactory.ShowQuestionBox("Show possible reasons?", "Show reasons?") == DialogResult.Yes)
-                        {
-                            ShowReasons();
-                        }
-                    }
-                }
-
+                Transform(TransformType.JsonToXml);
             }
             catch (Exception ex)
             {
-                if (messageBoxFactory.ShowErrorBox(ex.Message, "XML transformation error") == DialogResult.OK)
-                {
-                    if (messageBoxFactory.ShowQuestionBox("Show stack trace?", "Info") == DialogResult.Yes)
-                    {
-                        messageBoxFactory.ShowErrorBox(ex.StackTrace, "Stack trace");
-                    }
-                }
+                ShowException(ex);
             }
             finally
             {
                 Clear();
+                CheckTransformButtons();
             }
-            
+        }
+
+        private void Transform(TransformType transformType)
+        {
+            var transformResult = false;
+            var fileWitoutExtension = default(string);
+            var fileName = default(string);
+
+            switch (transformType)
+            {
+
+                case TransformType.XmlWithXslt:
+                    transformResult = transformEngine.TransformXmlWithXslt(XmlFile, XsltFile.FullName, rootFolder);
+                    fileName = CombinePaths(rootFolder, "out", XmlFile.Name);
+                    break;
+                case TransformType.JsonToXml:
+                    transformResult = transformEngine.TransformJsonToXml(JsonFile.FullName, rootFolder);
+                    fileWitoutExtension = Path.GetFileNameWithoutExtension(JsonFile.FullName);
+                    fileName = CombinePaths(rootFolder, "out", string.Concat(fileWitoutExtension, ".xml"));
+                    break;
+                case TransformType.XmlToJson:
+                    transformResult = transformEngine.TransformXmlToJson(XmlFile.FullName, rootFolder);
+                    fileWitoutExtension = Path.GetFileNameWithoutExtension(XmlFile.FullName);
+                    fileName = CombinePaths(rootFolder, "out", string.Concat(fileWitoutExtension, ".json"));
+                    break;
+                default:
+                    break;
+            }
+
+            if (transformResult)
+            {
+                SetTransformAndClearButtons(false);
+                if (messageBoxFactory.ShowInfoBox("File was transformed successfully", "Success") == DialogResult.OK)
+                {
+                    if (messageBoxFactory.ShowQuestionBox("Open transformed file?", "Info") == DialogResult.Yes)
+                    {
+                        Process.Start(fileName);
+                    }
+                }
+                SetTransformAndClearButtons(true);
+            }
+            else
+            {
+                if (messageBoxFactory.ShowWarningBox("File was not transformed", "Transformation error") == DialogResult.OK)
+                {
+                    if (messageBoxFactory.ShowQuestionBox("Show possible reasons?", "Show reasons?") == DialogResult.Yes)
+                    {
+                        ShowReasons();
+                    }
+                }
+            }
+        }
+
+        private void ShowException(Exception ex)
+        {
+            if (messageBoxFactory.ShowErrorBox(ex.Message, "Error") == DialogResult.OK)
+            {
+                if (messageBoxFactory.ShowQuestionBox("Show stack trace?", "Info") == DialogResult.Yes)
+                {
+                    messageBoxFactory.ShowErrorBox(ex.StackTrace, "Stack trace");
+                }
+            }
         }
 
         private void CreateFolders()
@@ -228,7 +190,13 @@ namespace TransformationTesting
 
         private void ShowReasons()
         {
-            messageBoxFactory.ShowInfoBox(transformEngine.GetErrorsAsString(), "Reasons");
+            if (messageBoxFactory.ShowWarningBox("XML was not transformed", "Transformation error") == DialogResult.OK)
+            {
+                if (messageBoxFactory.ShowQuestionBox("Show possible reasons?", "Show reasons?") == DialogResult.Yes)
+                {
+                    messageBoxFactory.ShowInfoBox(transformEngine.GetErrorsAsString(), "Reasons");
+                }
+            }
         }
 
         private void CreateFolderInRootDirectory(string folderName)
@@ -309,13 +277,14 @@ namespace TransformationTesting
         {
             JsonFile = null;
             labSelectedJSON.Text = string.Format(noFileChosen, "JSON");
-            btnJSONtoXML.Enabled = false;
         }
 
         private void SetTransformAndClearButtons(bool state)
         {
             btnTransform.Enabled = state;
             btnClear.Enabled = state;
+            btnJSONtoXML.Enabled = state;
+            btnXmlToJSON.Enabled = state;
         }
 
         private void EnableSearch(params string[] patterns)
@@ -330,7 +299,7 @@ namespace TransformationTesting
                     foundForm.ShowDialog();
                 }
                 SetLabsAndfiles();
-                CheckTransformButton();
+                CheckTransformButtons();
             }
         }
 
@@ -339,9 +308,11 @@ namespace TransformationTesting
             return string.Join(" ", patterns);
         }
 
-        private void CheckTransformButton()
+        private void CheckTransformButtons()
         {
             btnTransform.Enabled = CheckIfReady();
+            btnJSONtoXML.Enabled = CheckIfJsonReady();
+            btnXmlToJSON.Enabled = IsFileInfoReady(XmlFile);
         }
 
         private bool CheckIfReady()
